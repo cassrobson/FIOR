@@ -3,6 +3,7 @@
 #Date: 10/15/2023
 from matplotlib import *
 import matplotlib.pyplot as plt
+import networkx as nx
 from FIOR import *
 def main():
     #structure of Pools
@@ -62,18 +63,28 @@ def main():
         #"SlippageDecision": SlippageDecision
     }
 
-    # Create a plot
-    plt.figure(figsize=(10, 8))
+    # Create a directed graph
+    G_plot = nx.DiGraph(G)
 
-    # Draw nodes
-    for node, pos in zip(G.keys(), [(0, 0), (1, 1), (1, -1), (2, 0), (3, 0)]):
-        plt.scatter(*pos, s=500, label=f'{node}\nAsk: {askprices[node]}\nAvailability: {availability[node]}', edgecolors='black', linewidths=1, alpha=0.7)
+    # Set node attributes (ask prices and availability)
+    nx.set_node_attributes(G_plot, askprices, 'askprices')
+    nx.set_node_attributes(G_plot, availability, 'availability')
 
-    # Draw edges
-    for edge, weight in S.items():
-        plt.plot([*zip(*[(pos[0], pos[1]) for pos in [(0, 0), (1, 1), (1, -1), (2, 0), (3, 0)]][list(G.keys()).index(edge[0]), list(G.keys()).index(edge[1])])], linewidth=weight / 2, alpha=0.7)
+    # Set edge attributes (slippages)
+    nx.set_edge_attributes(G_plot, S, 'slippages')
 
-    plt.legend()
+    # Draw the graph
+    pos = nx.spring_layout(G_plot)  # You can use different layout algorithms
+    nx.draw(G_plot, pos, with_labels=True, font_weight='bold', node_size=700, node_color='skyblue', font_color='black')
+
+    # Draw edge labels (slippages)
+    edge_labels = {(i, j): f"{S[(i, j)]}" for i, j in G_plot.edges()}
+    nx.draw_networkx_edge_labels(G_plot, pos, edge_labels=edge_labels)
+
+    # Draw node attributes (ask prices and availability)
+    node_attributes = {node: f"{askprices[node]}\n{availability[node]}" for node in G_plot.nodes()}
+    nx.draw_networkx_labels(G_plot, pos, labels=node_attributes)
+
     plt.show()
 
     totalCost = FIOR(G, state, action, orderID, orderLog, orderAmount, starting_pool, S)
