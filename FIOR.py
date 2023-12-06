@@ -1,69 +1,115 @@
-def FIOR(G, state, action, orderID, orderLog, orderAmount, starting_pool, S):
-    def dfs(current_pool, visited, available_pools):
-        nonlocal orderAmount
+def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool, S, totalcost):
+    def dfs(current_pool, visited, available_pools, totalcost):
+        orderAmount = originalorderAmount
         visited.add(current_pool)
         
-        # Check if the sum of availability across all pools is already 0
-        if sum(state["Availability"].values()) == 0:
-            return
         
-        neighbors = G.get(current_pool, [])  # Directly access neighbors from the graph
+        if sum(state["Availability"].values()) == 0:
+            exhaustedState(current_pool, G, S, state, action, orderAmount, totalcost)
+        
+        else:
+        
+            neighbors = G.get(current_pool, [])  # Directly access neighbors from the graph
 
-        # Find available neighbors and sort them by ask prices
-        available_neighbors = [pool for pool in neighbors
-                            if pool in state["Availability"] and state["Availability"][pool] != 0]
-        available_neighbors.sort(key=lambda pool: action["AskPrice"][pool])
+            # Find available neighbors and sort them by ask prices
+            available_neighbors = [pool for pool in neighbors
+                                if pool in state["Availability"] and state["Availability"][pool] != 0]
+            available_neighbors.sort(key=lambda pool: action["AskPrice"][pool])
 
-        min_pool = None
-        min_ask_price = float('inf')  # Initialize with positive infinity
+            min_pool = None
+            min_ask_price = float('inf')  # Initialize with positive infinity
+            for pool in available_neighbors:
+                if pool not in visited and action["AskPrice"][pool] < min_ask_price:
+                    min_pool = pool
+                    min_ask_price = action["AskPrice"][pool]
 
-        for pool in available_neighbors:
-            if pool not in visited and action["AskPrice"][pool] < min_ask_price:
-                min_pool = pool
-                min_ask_price = action["AskPrice"][pool]
-
-        if min_pool is not None:
-            orderticket = state["Availability"][min_pool] * min_ask_price
-            if orderAmount < state["Availability"][min_pool]:
-                orderticket = orderAmount * min_ask_price
-                state["Availability"][min_pool] -= orderAmount
-                orderAmount = 0
-            else:
-                orderAmount -= state["Availability"][min_pool]
-                state["Availability"][min_pool] = 0
-            print(min_pool)
-            print(orderticket)
-            print(orderAmount)
-
-        # Check if orderAmount is still greater than 0 before attempting to execute at any available pool
-        for pool in available_pools:
-            if pool not in visited:
-                orderticket_pool = state["Availability"][pool] * action["AskPrice"][pool]
-                if orderAmount < state["Availability"][pool]:
-                    orderticket_pool = orderAmount * action["AskPrice"][pool]
-                    state["Availability"][pool] -= orderAmount
+            if min_pool is not None:
+                orderticket = state["Availability"][min_pool] * min_ask_price
+                if orderAmount < state["Availability"][min_pool]:
+                    orderticket = orderAmount * min_ask_price
+                    state["Availability"][min_pool] -= orderAmount
                     orderAmount = 0
                 else:
-                    orderAmount -= state["Availability"][pool]
-                    state["Availability"][pool] = 0
-                print(pool)
-                print(orderticket_pool)
-                print(orderAmount)
-        
-        # Recursively call dfs on the next available pool
-        for pool in available_neighbors:
-            if pool not in visited:
-                dfs(pool, visited, available_pools)
+                    orderAmount -= state["Availability"][min_pool]
+                    state["Availability"][min_pool] = 0
+                totalcost += orderticket
+                
+                print("Pool with the next most optimal ask price is:", min_pool)
+                print("Amount spent at pool ", min_pool, " is: ", orderticket)
+                print("Number of bonds purchased at ", min_pool, " is: ", originalorderAmount - orderAmount)
+                print("Number of bonds remaining in order is: ", orderAmount)
+                print("Current total cost of the order --> ", totalcost)
+                print()
 
-        if orderAmount == 0:
-            return
+            # Check if orderAmount is still greater than 0 before attempting to execute at any available pool
+            for pool in available_pools:
+                if pool not in visited:
+                    orderticket_pool = state["Availability"][pool] * action["AskPrice"][pool]
+                    if orderAmount < state["Availability"][pool]:
+                        orderticket_pool = orderAmount * action["AskPrice"][pool]
+                        state["Availability"][pool] -= orderAmount
+                        orderAmount = 0
+                    else:
+                        orderAmount -= state["Availability"][pool]
+                        state["Availability"][pool] = 0
+                    totalcost += orderticket
+                    
+                    print("Pool with the next most optimal ask price is:", pool)
+                    print("Amount spent at pool ", pool, " is: ", orderticket_pool)
+                    print("Number of bonds purchased at ", pool, " is: ", originalorderAmount - orderAmount)
+                    print("Number of bonds remaining in order is: ", orderAmount)
+                    print("Current total cost of the order --> ", totalcost)
+                    print()
+            
+            
+            # Recursively call dfs on the next available pool
+            for pool in available_neighbors:
+                if pool not in visited:
+                    dfs(pool, visited, available_pools, totalcost)
 
+            if orderAmount == 0:
+                return
+            
+            return totalcost
     visited = set()
     starting_pools = list(G.keys())
     starting_pools.sort(key=lambda pool: action["AskPrice"][pool])  # Sort starting pools by ask prices
-    dfs(starting_pools[0], visited, starting_pools)
+    finalcost = dfs(starting_pools[0], visited, starting_pools, totalcost)
 
-    return [starting_pools]
+
+    return [starting_pools], finalcost
+
+def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
+    slippage_exchanges = []
+    visited = set()
+
+    while orderAmount > 0:
+        current_pool = starting_pool
+        visited.add(current_pool)
+        available_neighbors = [pool for pool in G[current_pool]
+                               if pool in action["AskPrice"] and action["AskPrice"][pool] != 0]
+        available_neighbors.sort(key=lambda pool: action["AskPrice"][pool])
+
+        min_pool = None
+        min_slippage = float('inf')
+
+        for pool in available_neighbors:
+            if pool not in visited and S.get((current_pool, pool)) is not None and S[(current_pool, pool)] < min_slippage:
+                min_pool = pool
+                min_slippage = S[(current_pool, pool)]
+
+        if min_pool is not None:
+            slippage_exchanges.append((current_pool, min_pool))
+            orderticket = 10 * (1 + min_slippage / 100) * action["AskPrice"][min_pool]
+            orderAmount -= 10
+
+            if orderAmount < 10:
+                orderticket = orderAmount * (1 + min_slippage / 100) * action["AskPrice"][min_pool]
+                orderAmount = 0
+
+            totalcost += orderticket
+
+    return totalcost
 
 '''
 

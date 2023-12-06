@@ -18,7 +18,7 @@ def main():
     S = {
         ('A', 'B'): 2,
         ('B', 'A'): 3,
-        ('A', 'C'): -2,
+        ('A', 'C'): 2,
         ('C', 'A'): 4,
         ('A', 'E'): 3,
         ('E', 'A'): 4,
@@ -62,33 +62,50 @@ def main():
         "AskPrice": askprices,
         #"SlippageDecision": SlippageDecision
     }
+    '''
+    G_plot = nx.DiGraph()
 
-    # Create a directed graph
-    G_plot = nx.DiGraph(G)
+    G_plot.add_nodes_from(G.keys())
 
-    # Set node attributes (ask prices and availability)
+    for (source, target), slippage in S.items():
+        G_plot.add_edge(source, target, slippage=slippage)
+
     nx.set_node_attributes(G_plot, askprices, 'askprices')
     nx.set_node_attributes(G_plot, availability, 'availability')
+    
+    nx.set_edge_attributes(G_plot, S, "slippage")
 
-    # Set edge attributes (slippages)
-    nx.set_edge_attributes(G_plot, S, 'slippages')
+    # Node color based on availability
+    node_colors = ['red' if availability[node] == 0 else 'green' for node in G_plot.nodes()]
 
-    # Draw the graph
-    pos = nx.spring_layout(G_plot)  # You can use different layout algorithms
-    nx.draw(G_plot, pos, with_labels=True, font_weight='bold', node_size=700, node_color='skyblue', font_color='black')
+    fig, ax = plt.subplots(figsize=(8, 6))
+    pos = nx.spring_layout(G_plot, seed=42, k=0.15, iterations=50)
+    nx.draw(G_plot, pos, with_labels=True, font_weight='bold', node_size=700, node_color=node_colors, font_color='black',
+        connectionstyle="arc3,rad=0.1")
 
-    # Draw edge labels (slippages)
-    edge_labels = {(i, j): f"{S[(i, j)]}" for i, j in G_plot.edges()}
-    nx.draw_networkx_edge_labels(G_plot, pos, edge_labels=edge_labels)
+    
 
-    # Draw node attributes (ask prices and availability)
-    node_attributes = {node: f"{askprices[node]}\n{availability[node]}" for node in G_plot.nodes()}
-    nx.draw_networkx_labels(G_plot, pos, labels=node_attributes)
+    node_attributes = {node: f"Availability: {availability[node]}\nAsk Price: {askprices[node]}" for node in
+                       G_plot.nodes()}
+    
+    # Move the labels outward
+    pos_attributes = {k: (v[0], v[1] + 0.05) for k, v in pos.items()}
+    
+    nx.draw_networkx_labels(G_plot, pos_attributes, labels=node_attributes, font_size=8)
 
+    # Display slippage values on the edges
+    slippage_labels = {(source, target): f"Slippage: {slippage}" for (source, target, slippage) in
+                       G_plot.edges(data='slippage')}
+    nx.draw_networkx_edge_labels(G_plot, pos, edge_labels=slippage_labels, font_color='red', font_size=8)
+    
     plt.show()
 
-    totalCost = FIOR(G, state, action, orderID, orderLog, orderAmount, starting_pool, S)
-    print(totalCost)
+    '''    
+    print("The original order amount is:", orderAmount)
+    print()
+    totalcost = 0
+    order = FIOR(G, state, action, orderID, orderLog, orderAmount, starting_pool, S, totalcost)
+    print(order)
     
     
 if __name__ == "__main__":
