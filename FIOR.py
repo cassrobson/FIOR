@@ -1,14 +1,15 @@
 def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool, S, totalcost):
-    def dfs(current_pool, visited, available_pools, totalcost):
-        orderAmount = originalorderAmount
+    orderAmount = originalorderAmount
+    def dfs(current_pool, visited, available_pools, totalcost, orderAmount):
         visited.add(current_pool)
         
-        
         if sum(state["Availability"].values()) == 0:
-            exhaustedState(current_pool, G, S, state, action, orderAmount, totalcost)
-        
+            exhausted_result = exhaustedState(current_pool, G, S, state, action, orderAmount, totalcost)
+            print(exhausted_result)
+            
+            if orderAmount == 0:
+                return exhausted_result
         else:
-        
             neighbors = G.get(current_pool, [])  # Directly access neighbors from the graph
 
             # Find available neighbors and sort them by ask prices
@@ -52,7 +53,7 @@ def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool
                     else:
                         orderAmount -= state["Availability"][pool]
                         state["Availability"][pool] = 0
-                    totalcost += orderticket
+                    totalcost += orderticket_pool
                     
                     print("Pool with the next most optimal ask price is:", pool)
                     print("Amount spent at pool ", pool, " is: ", orderticket_pool)
@@ -65,29 +66,28 @@ def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool
             # Recursively call dfs on the next available pool
             for pool in available_neighbors:
                 if pool not in visited:
-                    dfs(pool, visited, available_pools, totalcost)
-
-            if orderAmount == 0:
-                return
-            
-            return totalcost
+                    if orderAmount == 0:
+                        return totalcost
+                    dfs(pool, visited, available_pools, totalcost, orderAmount)
+        
+        return totalcost
     visited = set()
     starting_pools = list(G.keys())
     starting_pools.sort(key=lambda pool: action["AskPrice"][pool])  # Sort starting pools by ask prices
-    finalcost = dfs(starting_pools[0], visited, starting_pools, totalcost)
+    finalcost = dfs(starting_pools[0], visited, starting_pools, totalcost, orderAmount)
 
 
     return [starting_pools], finalcost
 
 def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
+    print(orderAmount)
     slippage_exchanges = []
     visited = set()
-
+    
     while orderAmount > 0:
         current_pool = starting_pool
         visited.add(current_pool)
-        available_neighbors = [pool for pool in G[current_pool]
-                               if pool in action["AskPrice"] and action["AskPrice"][pool] != 0]
+        available_neighbors = [pool for pool in G[current_pool] if pool in action["AskPrice"] and action["AskPrice"][pool] != 0]
         available_neighbors.sort(key=lambda pool: action["AskPrice"][pool])
 
         min_pool = None
@@ -98,18 +98,21 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
                 min_pool = pool
                 min_slippage = S[(current_pool, pool)]
 
-        if min_pool is not None:
+        if orderAmount > 10:
             slippage_exchanges.append((current_pool, min_pool))
             orderticket = 10 * (1 + min_slippage / 100) * action["AskPrice"][min_pool]
             orderAmount -= 10
 
-            if orderAmount < 10:
-                orderticket = orderAmount * (1 + min_slippage / 100) * action["AskPrice"][min_pool]
-                orderAmount = 0
+        elif orderAmount <= 10:
+            slippage_exchanges.append((current_pool, min_pool))
+            orderticket = orderAmount * (1 + min_slippage / 100) * action["AskPrice"][min_pool]
+            orderAmount = 0
 
-            totalcost += orderticket
+        totalcost += orderticket
+        
+        
 
-    return totalcost
+    return slippage_exchanges, totalcost
 
 '''
 

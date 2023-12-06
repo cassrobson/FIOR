@@ -4,7 +4,7 @@
 from matplotlib import *
 import matplotlib.pyplot as plt
 import networkx as nx
-from FIOR import *
+from newFIOR import *
 def main():
     #structure of Pools
     G = {

@@ -15,9 +15,7 @@ def dfs(current_pool, visited, available_pools, totalcost, orderAmount, order_ex
     if sum(state["Availability"].values()) == 0:
         exhausted_result = exhaustedState(current_pool, G, S, state, action, orderAmount, totalcost)
         print(exhausted_result)
-        
-        if orderAmount == 0:
-            return exhausted_result
+        order_exhausted[0] = True
     else:
         neighbors = G.get(current_pool, [])  # Directly access neighbors from the graph
 
@@ -74,9 +72,7 @@ def dfs(current_pool, visited, available_pools, totalcost, orderAmount, order_ex
         
         # Recursively call dfs on the next available pool
         for pool in available_neighbors:
-            if pool not in visited:
-                if orderAmount == 0:
-                    return totalcost
+            if pool not in visited and not order_exhausted[0]:
                 dfs(pool, visited, available_pools, totalcost, orderAmount,order_exhausted, state, action, G, originalorderAmount, S)
     
     return totalcost
@@ -85,6 +81,7 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
     print(orderAmount)
     slippage_exchanges = []
     visited = set()
+    slippage_cost = 0
     
     while orderAmount > 0:
         current_pool = starting_pool
@@ -103,15 +100,17 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
         if orderAmount > 10:
             slippage_exchanges.append((current_pool, min_pool))
             orderticket = 10 * (1 + min_slippage / 100) * action["AskPrice"][min_pool]
+            slippage_cost += (10 * (1 + min_slippage / 100) * action["AskPrice"][min_pool]) - (10 * action["AskPrice"][min_pool])
             orderAmount -= 10
 
         elif orderAmount <= 10:
             slippage_exchanges.append((current_pool, min_pool))
             orderticket = orderAmount * (1 + min_slippage / 100) * action["AskPrice"][min_pool]
+            slippage_cost += (orderAmount * (1 + min_slippage / 100) * action["AskPrice"][min_pool]) - (orderAmount * action["AskPrice"][min_pool])
             orderAmount = 0
 
         totalcost += orderticket
         
         
 
-    return slippage_exchanges, totalcost
+    return "Slippage Exchange Route: " , slippage_exchanges, "Total Cost: ", totalcost, "Slippage Cost: ", slippage_cost
