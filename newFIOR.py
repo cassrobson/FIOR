@@ -15,6 +15,7 @@ def transition(current_pool, visited, available_pools, totalcost, orderAmount, o
     visited.add(current_pool)
     
     if sum(state["Availability"].values()) == 0:
+        print("im hereeee")
         exhausted_result = exhaustedState(current_pool, G, S, state, action, orderAmount, totalcost)
         print(exhausted_result)
         order_exhausted[0] = True

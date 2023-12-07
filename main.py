@@ -61,7 +61,7 @@ def main():
     action = {
         "AskPrice": askprices,
     }
-    
+    '''
     G_plot = nx.DiGraph()
 
     G_plot.add_nodes_from(G.keys())
@@ -98,7 +98,7 @@ def main():
     nx.draw_networkx_edge_labels(G_plot, pos, edge_labels=slippage_labels, font_color='red', font_size=8)
     
     plt.show()
-
+'''
         
     print("The original order amount is:", orderAmount)
     print()

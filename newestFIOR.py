@@ -38,7 +38,7 @@ def FIOR_LP(G, state, action, orderID, orderLog, originalorderAmount, starting_p
 def transition(current_pool, visited, available_pools, G, state, action, orderAmount, order_exhausted, S, totalcost, originalorderAmount):
     visited.add(current_pool)
     
-    if all(value == 0 for value in state["Availability"].values()):
+    if sum(state["Availability"].values()) == 0:
         exhausted_result = exhaustedState(current_pool, G, S, state, action, orderAmount, totalcost)
         print(exhausted_result)
         order_exhausted[0] = True
