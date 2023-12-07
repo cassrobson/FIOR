@@ -4,7 +4,7 @@
 from matplotlib import *
 import matplotlib.pyplot as plt
 import networkx as nx
-from newFIOR import *
+from newestFIOR import *
 def main():
     #structure of Pools
     G = {
@@ -55,13 +55,15 @@ def main():
     orderAmount = 120
 
     state = {
-        "OrderVolume": orderAmount,
-        "Availability": availability
+        "CurrentPool": starting_pool,
+        "RemainingOrderAmount": orderAmount,
+        "Availability": availability,
+        "AskPrice": askprices
     }
     action = {
-        "AskPrice": askprices,
+        "AvailablePools": list(G.keys()),
     }
-    
+    '''
     G_plot = nx.DiGraph()
 
     G_plot.add_nodes_from(G.keys())
@@ -98,12 +100,12 @@ def main():
     nx.draw_networkx_edge_labels(G_plot, pos, edge_labels=slippage_labels, font_color='red', font_size=8)
     
     plt.show()
-
+    '''
         
     print("The original order amount is:", orderAmount)
     print()
     totalcost = 0
-    order = FIOR(G, state, action, orderID, orderLog, orderAmount, starting_pool, S, totalcost)
+    order = FIOR_LP(G, state, action, orderID, orderLog, orderAmount, starting_pool, S, totalcost)
     print(order)
     
     

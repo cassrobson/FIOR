@@ -1,3 +1,5 @@
+from main import *
+import random
 def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool, S, totalcost):
     orderAmount = originalorderAmount
     order_exhausted = [False]  # List to store the order exhaustion state
@@ -5,11 +7,11 @@ def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool
     starting_pools = list(G.keys())
     starting_pools.sort(key=lambda pool: action["AskPrice"][pool])
 
-    finalcost = dfs(starting_pools[0], visited, starting_pools, totalcost, orderAmount, order_exhausted, state, action, G, originalorderAmount, S)
+    finalcost = transition(starting_pools[0], visited, starting_pools, totalcost, orderAmount, order_exhausted, state, action, G, originalorderAmount, S)
 
     return [starting_pools], finalcost
 
-def dfs(current_pool, visited, available_pools, totalcost, orderAmount, order_exhausted, state, action, G, originalorderAmount, S):
+def transition(current_pool, visited, available_pools, totalcost, orderAmount, order_exhausted, state, action, G, originalorderAmount, S):
     visited.add(current_pool)
     
     if sum(state["Availability"].values()) == 0:
@@ -70,10 +72,10 @@ def dfs(current_pool, visited, available_pools, totalcost, orderAmount, order_ex
                 print()
         
         
-        # Recursively call dfs on the next available pool
+        # Recursively call transition on the next available pool
         for pool in available_neighbors:
             if pool not in visited and not order_exhausted[0]:
-                dfs(pool, visited, available_pools, totalcost, orderAmount,order_exhausted, state, action, G, originalorderAmount, S)
+                transition(pool, visited, available_pools, totalcost, orderAmount,order_exhausted, state, action, G, originalorderAmount, S)
     
     return totalcost
     
@@ -114,3 +116,5 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
         
 
     return "Slippage Exchange Route: " , slippage_exchanges, "Total Cost: ", totalcost, "Slippage Cost: ", slippage_cost
+
+
