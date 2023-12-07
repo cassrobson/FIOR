@@ -170,18 +170,18 @@ def calculate_reward(state, orderAmount, totalcost, slippage_cost, originalorder
     # Reward based on the number of bonds purchased
     if orderAmount == 0:
         orderFulfilledReward = 1
-        print("We successfully fulfilled the customers order")
+        print("We successfully fulfilled the customers order -> +1")
     else: 
         orderFulfilledReward = -1
-        print("Order not completely fulfilled, customer has moved to another market maker because we failed to please")
+        print("Order not completely fulfilled, customer has moved to another market maker because we failed to please -> -1")
 
     # Reward based on slippage cost
     if slippage_cost > (0.02 * totalcost):  # Penalize for slippage cost
         slippage_cost_penalty = -1
-        print("Slippage cost exceeded the 2% threshold and we have failed to meet our customer guarantee")
+        print("Slippage cost exceeded the 2% threshold and we have failed to meet our customer guarantee -> -1")
     else: 
         slippage_cost_penalty = 1
-        print("We successfully kept slippage cost to under 2 percent of the total cost of the order")
+        print("We successfully kept slippage cost to under 2 percent of the total cost of the order -> +1")
     # Reward based on total cost of the order
     ask_prices = [state["AskPrice"][price] for price in state["AskPrice"] if state["AskPrice"][price] > 0]
     averageprice = sum(ask_prices) / (len(ask_prices))
@@ -189,10 +189,10 @@ def calculate_reward(state, orderAmount, totalcost, slippage_cost, originalorder
     
     if totalcost < averagethreshold:
         costefficiencyreward = 1
-        print("We have saved the customer money on average using smart order routing")
+        print("We have saved the customer money on average using smart order routing -> +1")
     else:
         costefficiencyreward = -1
-        print("Our total cost for the order failed to fall below the cost of buying the bonds at an average ask price")
+        print("Our total cost for the order failed to fall below the cost of buying the bonds at an average ask price -> -1")
     # Combine individual rewards (you can adjust weights if needed)
     combined_reward = orderFulfilledReward + slippage_cost_penalty + costefficiencyreward
 
