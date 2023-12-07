@@ -51,14 +51,15 @@ def main():
     starting_pool = "A"
     A = []  # Traversed node list
     orderLog = {}
-    orderID = "120 MSFT CRP BONDS"
+    orderID = "MSFT CRP BONDS"
     orderAmount = 120
 
     state = {
         "CurrentPool": starting_pool,
         "RemainingOrderAmount": orderAmount,
         "Availability": availability,
-        "AskPrice": askprices
+        "AskPrice": askprices,
+        "Slippages": S
     }
     action = {
         "AvailablePools": list(G.keys()),
@@ -102,8 +103,7 @@ def main():
     plt.show()
     '''
         
-    print("The original order amount is:", orderAmount)
-    print()
+    
     totalcost = 0
     order = FIOR_LP(G, state, action, orderID, orderLog, orderAmount, starting_pool, S, totalcost)
     print(order)

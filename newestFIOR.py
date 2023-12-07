@@ -3,6 +3,8 @@ import numpy as np
 from newmain import *
 
 def FIOR_LP(G, state, action, orderID, orderLog, originalorderAmount, starting_pool, S, totalcost):
+    print("We are about to commance the smart order routing process for: ", originalorderAmount, " ", orderID)
+    print("We will begin at pool -->", starting_pool)
     orderAmount = originalorderAmount
     visited = set()
     order_exhausted = [False]
@@ -17,14 +19,14 @@ def FIOR_LP(G, state, action, orderID, orderLog, originalorderAmount, starting_p
         
         next_node = optimal_node_LP(G, state, starting_pool, previous_node)
         
-    print("Pool with the next most optimal ask price is:", pool_traversed)
+    print("Finished at node:", pool_traversed, "We have reached the exhaustion state")
     print("Amount spent at pool ", pool_traversed, " is: ", orderticket)
     print("Number of bonds purchased at ", pool_traversed, " is: ", originalorderAmount - orderAmount)
     print("Number of bonds remaining in order is: ", orderAmount)
     print("Current total cost of the order --> ", totalcost)
     print()
-
-    return [visited], totalcost
+    exhausted = exhaustedState(pool_traversed, G, S, state, action, orderAmount, totalcost)
+    return "Pools visited -->",[visited], " --> ", exhausted
 
 def optimal_node_LP(G, state, starting_node, previous_node):
     # Extract nodes and ask prices
@@ -94,11 +96,16 @@ def transition(pool_to_traverse, visited, G, state, action, orderAmount, order_e
     return totalcost, pool_traversed, orderticket, orderAmount
 
 def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
-    print(orderAmount)
+    print("-----------------Exhaustion State--------------------")
+    print("--------This means that there remain no pools with bonds available at their original price----------")
+    print("------Here is when slippage takes affect on the price of market orders--------")
+    print()
+    print("Remaining number of bonds to buy as market orders --> ", orderAmount)
+    print("We are currently at pool --> ", starting_pool)
     slippage_exchanges = []
     visited = set()
     slippage_cost = 0
-
+    
     while orderAmount > 0:
         current_pool = starting_pool
         visited.add(current_pool)
@@ -109,45 +116,27 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
         min_slippage = float('inf')
 
         for pool in available_neighbors:
-            if pool not in visited and S.get((current_pool, pool)) is not None and S[(current_pool, pool)] < min_slippage:
+            if pool not in visited and state["Slippages"].get((current_pool, pool)) is not None and S[(current_pool, pool)] < min_slippage:
+                print("We've identified the accessable and minimal slippage as --> ", state["Slippages"].get((current_pool, pool)), " between ", current_pool, " and ", pool)
                 min_pool = pool
                 min_slippage = S[(current_pool, pool)]
 
-        if min_pool is not None:  # Check if a valid pool is found
-            if orderAmount > 10:
-                slippage_exchanges.append((current_pool, min_pool))
-                # Linear Programming: Define the objective function coefficients (slippage costs)
-                c = [S[(current_pool, min_pool)] for _ in available_neighbors]
+        if orderAmount > 10:
+            slippage_exchanges.append((current_pool, min_pool))
+            orderticket = 10 * (1 + min_slippage / 100) * state["AskPrice"][min_pool]
+            slippage_cost += (10 * (1 + min_slippage / 100) * state["AskPrice"][min_pool]) - (10 * state["AskPrice"][min_pool])
+            orderAmount -= 10
 
-                # Linear Programming: Define the equality constraints (allocate 10 bonds)
-                A_eq = [[1 if pool == min_pool else 0 for pool in available_neighbors]]
-                b_eq = [10]
+        elif orderAmount <= 10:
+            slippage_exchanges.append((current_pool, min_pool))
+            orderticket = orderAmount * (1 + min_slippage / 100) * state["AskPrice"][min_pool]
+            slippage_cost += (orderAmount * (1 + min_slippage / 100) * state["AskPrice"][min_pool]) - (orderAmount * state["AskPrice"][min_pool])
+            orderAmount = 0
 
-                # Linear Programming: Solve the linear program
-                result = linprog(c, A_eq=A_eq, b_eq=b_eq)
+        totalcost += orderticket
+        
+        
+        
+        
 
-                orderticket = 10 * (1 + result.fun / 100) * state["AskPrice"][min_pool]
-                slippage_cost += (10 * (1 + result.fun / 100) * state["AskPrice"][min_pool]) - (10 * state["AskPrice"][min_pool])
-                orderAmount -= 10
-
-            elif orderAmount <= 10:
-                slippage_exchanges.append((current_pool, min_pool))
-                # Linear Programming: Define the objective function coefficients (slippage costs)
-                c = [S[(current_pool, min_pool)] for _ in available_neighbors]
-
-                # Linear Programming: Define the equality constraints (allocate remaining bonds)
-                A_eq = [[1 if pool == min_pool else 0 for pool in available_neighbors]]
-                b_eq = [orderAmount]
-
-                # Linear Programming: Solve the linear program
-                result = linprog(c, A_eq=A_eq, b_eq=b_eq)
-
-                orderticket = orderAmount * (1 + result.fun / 100) * state["AskPrice"][min_pool]
-                slippage_cost += (orderAmount * (1 + result.fun / 100) * state["AskPrice"][min_pool]) - (orderAmount * state["AskPrice"][min_pool])
-                orderAmount = 0
-
-            totalcost += orderticket
-        else:
-            break  # Break out of the loop if no valid pool is found
-
-    return "Slippage Exchange Route: ", slippage_exchanges, "Total Cost: ", totalcost, "Slippage Cost: ", slippage_cost
+    return "Slippage Exchange Route: " , slippage_exchanges, "Total Cost of entire order: ", totalcost, "Slippage Cost: ", slippage_cost
