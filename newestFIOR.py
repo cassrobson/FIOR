@@ -3,7 +3,7 @@ import numpy as np
 from newmain import *
 
 def FIOR_LP(G, state, action, orderID, orderLog, originalorderAmount, starting_pool, S, totalcost):
-    print("We are about to commance the smart order routing process for: ", originalorderAmount, " ", orderID)
+    print("We are about to commance the smart order routing process (MDP) using linear programming and optimization for: ", originalorderAmount, " ", orderID)
     print("We will begin at pool -->", starting_pool)
     orderAmount = originalorderAmount
     visited = set()
@@ -112,15 +112,8 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
         available_neighbors = [pool for pool in G[current_pool] if pool in state["AskPrice"] and state["AskPrice"][pool] != 0]
         available_neighbors.sort(key=lambda pool: state["AskPrice"][pool])
 
-        min_pool = None
-        min_slippage = float('inf')
-
-        for pool in available_neighbors:
-            if pool not in visited and state["Slippages"].get((current_pool, pool)) is not None and S[(current_pool, pool)] < min_slippage:
-                print("We've identified the accessable and minimal slippage as --> ", state["Slippages"].get((current_pool, pool)), " between ", current_pool, " and ", pool)
-                min_pool = pool
-                min_slippage = S[(current_pool, pool)]
-
+        min_pool, min_slippage = optimal_slippage_LP(current_pool, available_neighbors, S)
+        
         if orderAmount > 10:
             slippage_exchanges.append((current_pool, min_pool))
             orderticket = 10 * (1 + min_slippage / 100) * state["AskPrice"][min_pool]
@@ -140,3 +133,30 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
         
 
     return "Slippage Exchange Route: " , slippage_exchanges, "Total Cost of entire order: ", totalcost, "Slippage Cost: ", slippage_cost
+
+def optimal_slippage_LP(current_pool, available_neighbors, S):
+    # Initialize the solution vecotr for slippage optimization
+    x0 = np.zeros(len(available_neighbors))
+    
+    #Initialize the objective function coefficiencts
+    c = [S.get((current_pool, pool), 0) for pool in available_neighbors]
+    
+    #Bounds for the variables (slippages must be greater than or equal to zero)
+    bounds = [(0, None) for _ in range(len(available_neighbors))]
+    
+    #Objective function to minimize
+    def objective_function(x):
+        return np.dot(c, x)
+    
+    #Contraint: only one neighbor can be chosen
+    constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1}]
+    
+    #Solve the linear programming problem to find the minimum slippage
+    result = minimize(objective_function, x0, bounds=bounds, constraints=constraints)
+    
+    #Extract the index of the optmal neighbor (minimal slippage)
+    optimal_neighbor_index = np.argmax(result.x)
+    
+    return available_neighbors[optimal_neighbor_index], S.get((current_pool, available_neighbors[optimal_neighbor_index]), 0)
+    
+    

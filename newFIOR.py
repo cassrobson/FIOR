@@ -1,6 +1,8 @@
 from main import *
 import random
 def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool, S, totalcost):
+    print("We are about to commance the smart order routing process (MDP) using DFS Traversal for: ", originalorderAmount, " ", orderID)
+    print("We will begin at pool -->", starting_pool)
     orderAmount = originalorderAmount
     order_exhausted = [False]  # List to store the order exhaustion state
     visited = set()
@@ -15,7 +17,6 @@ def transition(current_pool, visited, available_pools, totalcost, orderAmount, o
     visited.add(current_pool)
     
     if sum(state["Availability"].values()) == 0:
-        print("im hereeee")
         exhausted_result = exhaustedState(current_pool, G, S, state, action, orderAmount, totalcost)
         print(exhausted_result)
         order_exhausted[0] = True
@@ -81,6 +82,12 @@ def transition(current_pool, visited, available_pools, totalcost, orderAmount, o
     return totalcost
     
 def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
+    print("-----------------Exhaustion State--------------------")
+    print("--------This means that there remain no pools with bonds available at their original price----------")
+    print("------Here is when slippage takes affect on the price of market orders--------")
+    print()
+    print("Remaining number of bonds to buy as market orders --> ", orderAmount)
+    print("We are currently at pool --> ", starting_pool)
     print(orderAmount)
     slippage_exchanges = []
     visited = set()
