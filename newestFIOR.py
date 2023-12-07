@@ -3,6 +3,8 @@ import numpy as np
 from newmain import *
 
 def FIOR_LP(G, state, action, orderID, orderLog, originalorderAmount, starting_pool, S, totalcost):
+    print()
+    print("-----------------ORDER INITIALIZED------------------")
     print("We are about to commance the smart order routing process (MDP) using linear programming and optimization for: ", originalorderAmount, " ", orderID)
     print("We will begin at pool -->", starting_pool)
     orderAmount = originalorderAmount
@@ -25,8 +27,12 @@ def FIOR_LP(G, state, action, orderID, orderLog, originalorderAmount, starting_p
     print("Number of bonds remaining in order is: ", orderAmount)
     print("Current total cost of the order --> ", totalcost)
     print()
-    exhausted = exhaustedState(pool_traversed, G, S, state, action, orderAmount, totalcost)
-    return "Pools visited -->",[visited], " --> ", exhausted
+    slippage_exchanges, totalcost, slippage_cost, reward = exhaustedState(pool_traversed, G, S, state, action, orderAmount, totalcost, originalorderAmount)
+    print()
+    print("-------SUMMARY OF ORDER EXECUTION----------")
+    print()
+    print("Slippage Exchange Route: " , slippage_exchanges, "Total Cost of entire order: ", totalcost, "Slippage Cost: ", slippage_cost)
+    return "Pools visited -->",[visited], " --> ", reward
 
 def optimal_node_LP(G, state, starting_node, previous_node):
     # Extract nodes and ask prices
@@ -38,15 +44,14 @@ def optimal_node_LP(G, state, starting_node, previous_node):
     print("All direct neighbors with bonds available --> ", neighbors_with_availability)
     ask_prices = [state["AskPrice"][node] for node in neighbors_with_availability]
     print("Ask prices of direct neighbors with bonds available --> ", ask_prices)
+    print("-----------------------------------------------------------------")
     # Number of nodes
     num_neighbors = len(neighbors_with_availability)
     # if all other askprices are zero, we can buy from any neighboring pools, if all other ask_prices are more than the starting nodes ask price, return starting node
     if all(state["AskPrice"][node] == 0 or (state["AskPrice"][starting_node] < state["AskPrice"][node] and state["Availability"][starting_node] != 0) for node in neighbors_with_availability):
-        print("im here")
         return previous_node
     elif (len(neighbors_with_availability) == 0):
         #return to the node before starting node
-        print("im here toooo")
         return starting_node
     else:
         # Initialize the solution vector
@@ -95,7 +100,7 @@ def transition(pool_to_traverse, visited, G, state, action, orderAmount, order_e
     
     return totalcost, pool_traversed, orderticket, orderAmount
 
-def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
+def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost, originalorderAmount):
     print("-----------------Exhaustion State--------------------")
     print("--------This means that there remain no pools with bonds available at their original price----------")
     print("------Here is when slippage takes affect on the price of market orders--------")
@@ -113,26 +118,28 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost):
         available_neighbors.sort(key=lambda pool: state["AskPrice"][pool])
 
         min_pool, min_slippage = optimal_slippage_LP(current_pool, available_neighbors, S)
+        print("Minimum accessible slippage route identified --> ", min_slippage, " ", (current_pool, min_pool))
         
         if orderAmount > 10:
             slippage_exchanges.append((current_pool, min_pool))
             orderticket = 10 * (1 + min_slippage / 100) * state["AskPrice"][min_pool]
             slippage_cost += (10 * (1 + min_slippage / 100) * state["AskPrice"][min_pool]) - (10 * state["AskPrice"][min_pool])
             orderAmount -= 10
+            print("Order of 10 bonds submitted at pool ", min_pool, " with slippage cost of ", slippage_cost)
 
         elif orderAmount <= 10:
             slippage_exchanges.append((current_pool, min_pool))
             orderticket = orderAmount * (1 + min_slippage / 100) * state["AskPrice"][min_pool]
             slippage_cost += (orderAmount * (1 + min_slippage / 100) * state["AskPrice"][min_pool]) - (orderAmount * state["AskPrice"][min_pool])
             orderAmount = 0
+            print("Remaining number of bonds purchased at pool ", min_pool, " with slippage cost of ", slippage_cost)
 
         totalcost += orderticket
-        
-        
-        
-        
-
-    return "Slippage Exchange Route: " , slippage_exchanges, "Total Cost of entire order: ", totalcost, "Slippage Cost: ", slippage_cost
+    print()
+    
+    print("-------REWARD CALCULATION--------")   
+    reward = calculate_reward(state, orderAmount, totalcost, slippage_cost, originalorderAmount)
+    return slippage_exchanges, totalcost, slippage_cost, reward
 
 def optimal_slippage_LP(current_pool, available_neighbors, S):
     # Initialize the solution vecotr for slippage optimization
@@ -159,4 +166,34 @@ def optimal_slippage_LP(current_pool, available_neighbors, S):
     
     return available_neighbors[optimal_neighbor_index], S.get((current_pool, available_neighbors[optimal_neighbor_index]), 0)
     
+def calculate_reward(state, orderAmount, totalcost, slippage_cost, originalorderAmount):
+    # Reward based on the number of bonds purchased
+    if orderAmount == 0:
+        orderFulfilledReward = 1
+        print("We successfully fulfilled the customers order")
+    else: 
+        orderFulfilledReward = -1
+        print("Order not completely fulfilled, customer has moved to another market maker because we failed to please")
+
+    # Reward based on slippage cost
+    if slippage_cost > (0.02 * totalcost):  # Penalize for slippage cost
+        slippage_cost_penalty = -1
+        print("Slippage cost exceeded the 2% threshold and we have failed to meet our customer guarantee")
+    else: 
+        slippage_cost_penalty = 1
+        print("We successfully kept slippage cost to under 2 percent of the total cost of the order")
+    # Reward based on total cost of the order
+    ask_prices = [state["AskPrice"][price] for price in state["AskPrice"] if state["AskPrice"][price] > 0]
+    averageprice = sum(ask_prices) / (len(ask_prices))
+    averagethreshold = originalorderAmount * averageprice
     
+    if totalcost < averagethreshold:
+        costefficiencyreward = 1
+        print("We have saved the customer money on average using smart order routing")
+    else:
+        costefficiencyreward = -1
+        print("Our total cost for the order failed to fall below the cost of buying the bonds at an average ask price")
+    # Combine individual rewards (you can adjust weights if needed)
+    combined_reward = orderFulfilledReward + slippage_cost_penalty + costefficiencyreward
+
+    return "OVERALL REWARD --> ", combined_reward
