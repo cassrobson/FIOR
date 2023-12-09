@@ -48,7 +48,7 @@ def transition(current_pool, visited, available_pools, totalcost, orderAmount, o
             
             print("Pool with the next most optimal ask price is:", min_pool)
             print("Amount spent at pool ", min_pool, " is: ", orderticket)
-            print("Number of bonds purchased at ", min_pool, " is: ", originalorderAmount - orderAmount)
+            print("Number of bonds purchased so far ", min_pool, " is: ", originalorderAmount - orderAmount)
             print("Number of bonds remaining in order is: ", orderAmount)
             print("Current total cost of the order --> ", totalcost)
             print()
