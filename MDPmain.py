@@ -1,6 +1,6 @@
 #Main Function
-#Group 1 
-#Date: 10/15/2023
+#Authors: Cassel Robson, Marko Misic, Mila Cvetanovska, Erika Capper
+#Date: 12/10/2023
 from matplotlib import *
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -32,7 +32,7 @@ def main():
     # askprices at each pool
     askprices = {
         "A": 100.40,
-        "B": 0, 
+        "B": 100.30, 
         "C": 0, 
         "D": 100.20, 
         "E": 100.10 
@@ -40,9 +40,9 @@ def main():
     }
     availability = {
         "A": 20,
-        "B": 0, 
+        "B": 20, 
         "C": 0, 
-        "D": 50,
+        "D": 30,
         "E": 40
     }
     
