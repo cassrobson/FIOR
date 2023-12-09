@@ -48,7 +48,7 @@ def optimal_node_LP(G, state, starting_node, previous_node):
     # Number of nodes
     num_neighbors = len(neighbors_with_availability)
     # if all other askprices are zero, we can buy from any neighboring pools, if all other ask_prices are more than the starting nodes ask price, return starting node
-    if all(state["AskPrice"][node] == 0 or (state["AskPrice"][starting_node] < state["AskPrice"][node] and state["Availability"][starting_node] != 0) for node in neighbors_with_availability):
+    if all(state["Availability"][node] == 0 or (state["AskPrice"][starting_node] < state["AskPrice"][node] and state["Availability"][starting_node] != 0) for node in neighbors_with_availability):
         return previous_node
     elif (len(neighbors_with_availability) == 0):
         #return to the node before starting node
