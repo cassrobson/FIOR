@@ -46,11 +46,11 @@ def FIOR_LP(G, state, action, orderID, orderLog, originalorderAmount, starting_p
 def optimal_node_LP(G, state, starting_node, previous_node, bondsbought):
     # Extract nodes and ask prices
     print("Previous Node: ", previous_node)
-    print("Number of bonds bought at ", previous_node, "--> ", bondsbought)
     print("Currently at node: ", starting_node)
     neighbors = G.get(starting_node, [])
+    print("Number of bonds bought at ", starting_node, "--> ", bondsbought)
     print("All direct neighbors --> ", neighbors)
-    neighbors_with_availability = [node for node in neighbors if state["Availability"][node] > 0]
+    neighbors_with_availability = [node for node in neighbors if state["Availability"].get(node, 0) > 0]
     print("All direct neighbors with bonds available --> ", neighbors_with_availability)
     ask_prices = [state["AskPrice"][node] for node in neighbors_with_availability]
     print("Ask prices of direct neighbors with bonds available --> ", ask_prices)
@@ -99,20 +99,20 @@ def transition(pool_to_traverse, visited, G, state, action, orderAmount, order_e
         print(exhausted_result)
         order_exhausted[0] = True
     else:
-        if orderAmount < state["Availability"][pool_to_traverse]:
+        if orderAmount <= state["Availability"][pool_to_traverse]:
             orderticket = orderAmount * state["AskPrice"][pool_to_traverse]
-            state["Availability"][pool_to_traverse] -= orderAmount
             bondsbought = orderAmount
             orderAmount = 0
         else:
             orderticket = state["Availability"][pool_to_traverse] * state["AskPrice"][pool_to_traverse]
+            bondsbought = state["Availability"][pool_to_traverse]
             orderAmount -= state["Availability"][pool_to_traverse]
-            bondsbought = previousorderAmount - orderAmount
-            state["Availability"][pool_to_traverse] = 0
         totalcost += orderticket
+        state["Availability"][pool_to_traverse] = 0
     pool_traversed = pool_to_traverse
     
     return totalcost, pool_traversed, orderticket, orderAmount, bondsbought
+
 
 def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost, originalorderAmount):
     print("-----------------Exhaustion State--------------------")
