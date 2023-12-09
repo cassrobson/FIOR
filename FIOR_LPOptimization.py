@@ -12,14 +12,22 @@ def FIOR_LP(G, state, action, orderID, orderLog, originalorderAmount, starting_p
     order_exhausted = [False]
     previous_node = starting_pool
     next_node = optimal_node_LP(G, state, starting_pool, previous_node)
-    
-    while sum(state["Availability"].values()) > 0:
-        # Execute action
-        totalcost, pool_traversed, orderticket, orderAmount = transition(next_node, visited, G, state, action, orderAmount, order_exhausted, S, totalcost, originalorderAmount)
-        previous_node = starting_pool
-        starting_pool = pool_traversed
-        
-        next_node = optimal_node_LP(G, state, starting_pool, previous_node)
+
+    if sum(state["Availability"].values()) >= originalorderAmount:
+        while orderAmount > 0:
+            totalcost, pool_traversed, orderticket, orderAmount = transition(next_node, visited, G, state, action, orderAmount, order_exhausted, S, totalcost, originalorderAmount)
+            previous_node = starting_pool
+            starting_pool = pool_traversed
+            
+            next_node = optimal_node_LP(G, state, starting_pool, previous_node)
+    else:
+        while sum(state["Availability"].values()) > 0:
+            # Execute action
+            totalcost, pool_traversed, orderticket, orderAmount = transition(next_node, visited, G, state, action, orderAmount, order_exhausted, S, totalcost, originalorderAmount)
+            previous_node = starting_pool
+            starting_pool = pool_traversed
+            
+            next_node = optimal_node_LP(G, state, starting_pool, previous_node)
         
     print("Finished at node:", pool_traversed, "We have reached the exhaustion state")
     print("Amount spent at pool ", pool_traversed, " is: ", orderticket)
@@ -58,7 +66,7 @@ def optimal_node_LP(G, state, starting_node, previous_node):
         x0 = np.zeros(num_neighbors)
 
         # Initialize the objective function coefficients
-        c = [-price for price in ask_prices]
+        c = ask_prices
 
         # Bounds for the variables (ask prices must be greater than 0)
         bounds = [(0, None) for _ in range(num_neighbors)]
