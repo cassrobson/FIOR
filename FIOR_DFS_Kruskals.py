@@ -1,5 +1,6 @@
 from main import *
 import random
+import time
 def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool, S, totalcost):
     print("We are about to commance the smart order routing process (MDP) using DFS Traversal for: ", originalorderAmount, " ", orderID)
     print("We will begin at pool -->", starting_pool)
@@ -11,7 +12,7 @@ def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool
 
     finalcost = transition(starting_pools[0], visited, starting_pools, totalcost, orderAmount, order_exhausted, state, action, G, originalorderAmount, S)
 
-    return [starting_pools], finalcost
+    return [starting_pools], finalcost, "Total Execution Time: ", time.time()
 
 def transition(current_pool, visited, available_pools, totalcost, orderAmount, order_exhausted, state, action, G, originalorderAmount, S):
     visited.add(current_pool)
