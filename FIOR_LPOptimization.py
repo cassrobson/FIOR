@@ -71,7 +71,7 @@ def optimal_node_LP(G, state, starting_node, previous_node, bondsbought):
         # Initialize the objective function coefficients
         c = ask_prices
 
-        # Bounds for the variables (ask prices must be greater than 0)
+        # Bounds for the variables (availability must be greater than zero)
         bounds = [(0, None) for _ in range(num_neighbors)]
 
         # Objective function to minimize
