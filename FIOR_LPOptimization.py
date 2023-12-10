@@ -125,9 +125,9 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost, o
     slippage_exchanges = []
     visited = set()
     slippage_cost = 0
-    
+    current_pool = starting_pool
     while orderAmount > 0:
-        current_pool = starting_pool
+        
         visited.add(current_pool)
         available_neighbors = [pool for pool in G[current_pool] if pool in state["AskPrice"] and state["AskPrice"][pool] != 0]
         available_neighbors.sort(key=lambda pool: state["AskPrice"][pool])
@@ -148,7 +148,7 @@ def exhaustedState(starting_pool, G, S, state, action, orderAmount, totalcost, o
             slippage_cost += (orderAmount * (1 + min_slippage / 100) * state["AskPrice"][min_pool]) - (orderAmount * state["AskPrice"][min_pool])
             orderAmount = 0
             print("Remaining number of bonds purchased at pool ", min_pool, " with slippage cost of ", slippage_cost)
-
+        current_pool = min_pool
         totalcost += orderticket
     print()
     

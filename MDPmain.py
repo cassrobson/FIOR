@@ -40,9 +40,9 @@ def main():
     }
     availability = {
         "A": 20,
-        "B": 20, 
+        "B": 10, 
         "C": 50, 
-        "D": 50,
+        "D": 10,
         "E": 40
     }
     
@@ -52,7 +52,7 @@ def main():
     A = []  # Traversed node list
     orderLog = {}
     orderID = "MSFT CRP BONDS"
-    orderAmount = 120
+    orderAmount = 150
 
     state = {
         "CurrentPool": starting_pool,
