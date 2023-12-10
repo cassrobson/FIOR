@@ -1,4 +1,5 @@
 from scipy.optimize import minimize
+import time
 import numpy as np
 from MDPmain import *
 
@@ -41,7 +42,7 @@ def FIOR_LP(G, state, action, orderID, orderLog, originalorderAmount, starting_p
     print("-------SUMMARY OF ORDER EXECUTION----------")
     print()
     print("Slippage Exchange Route: " , slippage_exchanges, "Total Cost of entire order: ", totalcost, "Slippage Cost: ", slippage_cost)
-    return "Pools visited -->",[visited], " --> ", reward
+    return "Pools visited -->",[visited], " --> ", reward, "Total Execution time (s) --> ", time.time()
 
 def optimal_node_LP(G, state, starting_node, previous_node, bondsbought):
     # Extract nodes and ask prices
