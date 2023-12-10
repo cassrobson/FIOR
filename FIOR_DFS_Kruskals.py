@@ -12,7 +12,7 @@ def FIOR(G, state, action, orderID, orderLog, originalorderAmount, starting_pool
 
     finalcost = transition(starting_pools[0], visited, starting_pools, totalcost, orderAmount, order_exhausted, state, action, G, originalorderAmount, S)
 
-    return [starting_pools], finalcost, "Total Execution Time: ", time.time()
+    return [starting_pools], finalcost
 
 def transition(current_pool, visited, available_pools, totalcost, orderAmount, order_exhausted, state, action, G, originalorderAmount, S):
     visited.add(current_pool)
