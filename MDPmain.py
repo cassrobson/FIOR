@@ -24,15 +24,15 @@ def main():
         ('E', 'A'): 4,
         ('B', 'E'): 8,
         ('E', 'B'): 1,
-        ('D', 'E'): 0.5,
-        ('E', 'D'): 2,
+        ('D', 'E'): 2,
+        ('E', 'D'): 0.5,
         ('D', 'C'): 1,
         ('C', 'D'): 7,
     }
     # askprices at each pool
     askprices = {
         "A": 100.40,
-        "B": 100.30, 
+        "B": 100.05, 
         "C": 99.10, 
         "D": 100.20, 
         "E": 100.10 
@@ -40,9 +40,9 @@ def main():
     }
     availability = {
         "A": 20,
-        "B": 10, 
-        "C": 50, 
-        "D": 10,
+        "B": 20, 
+        "C": 0, 
+        "D": 30,
         "E": 40
     }
     
@@ -52,7 +52,7 @@ def main():
     A = []  # Traversed node list
     orderLog = {}
     orderID = "MSFT CRP BONDS"
-    orderAmount = 150
+    orderAmount = 120
 
     state = {
         "CurrentPool": starting_pool,
